@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a73e8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>កំណត់ហេតុប្រជុំ AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Battambang', sans-serif;
+      background-color: #f0f4f8;
+      margin: 0;
+      padding: 15px;
+      display: flex;
+      justify-content: center;
+      color: #202124;
+    }
+    .app-container {
+      background: white;
+      max-width: 600px;
+      width: 100%;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 12px;
+      margin-bottom: 15px;
+    }
+    h2 {
+      color: #1a73e8;
+      margin: 0;
+      font-size: 20px;
+    }
+    .settings-btn {
+      background: #e8f0fe;
+      color: #1a73e8;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-family: 'Battambang', sans-serif;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .api-box {
+      display: none;
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+    .api-box input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .api-box button {
+      background: #188038;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-family: 'Battambang', sans-serif;
+      cursor: pointer;
+    }
+    .timer-display {
+      text-align: center;
+      font-size: 32px;
+      font-weight: bold;
+      color: #202124;
+      margin: 15px 0 5px 0;
+    }
+    .status {
+      text-align: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: #5f6368;
+      margin-bottom: 20px;
+      min-height: 22px;
+    }
+    .recording-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background-color: #d93025;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .btn {
+      flex: 1;
+      font-family: 'Battambang', sans-serif;
+      font-size: 15px;
+      padding: 14px 10px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+    #startBtn { background-color: #1a73e8; color: white; }
+    #startBtn:disabled { background-color: #a0c3ff; }
+    #pauseBtn { background-color: #f9ab00; color: #202124; display: none; }
+    #stopBtn { background-color: #d93025; color: white; }
+    #stopBtn:disabled { background-color: #f2a29d; }
+    .result-box {
+      background: #f8f9fa;
+      border: 1px solid #dadce0;
+      border-radius: 10px;
+      padding: 16px;
+      white-space: pre-wrap;
+      line-height: 1.8;
+      min-height: 180px;
+      font-size: 15px;
+    }
+    .bottom-actions {
+      display: none;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    #copyBtn { background-color: #188038; color: white; }
+    #shareBtn { background-color: #5f6368; color: white; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="header">
+      <h2>🎙️ កត់ត្រាប្រជុំ AI</h2>
+      <button class="settings-btn" onclick="toggleApiBox()">⚙️ កំណត់ API Key</button>
+    </div>
+
+    <div class="api-box" id="apiBox">
+      <div style="font-size: 13px; font-weight: bold;">បញ្ចូល Gemini API Key ផ្ទាល់ខ្លួន (រក្សាទុកតែលើទូរស័ព្ទនេះប៉ុណ្ណោះ)៖</div>
+      <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
+      <button onclick="saveApiKey()">រក្សាទុក Key</button>
+    </div>
+
+    <div class="timer-display" id="timer">00:00</div>
+    <div class="status" id="statusText">រួចរាល់សម្រាប់ស្ដាប់ការប្រជុំ</div>
+
+    <div class="controls">
+      <button class="btn" id="startBtn" onclick="startRecording()">▶️ ចាប់ផ្ដើមស្ដាប់</button>
+      <button class="btn" id="pauseBtn" onclick="togglePause()">⏸️ ផ្អាក</button>
+      <button class="btn" id="stopBtn" onclick="stopRecording()" disabled>⏹️ បញ្ឈប់ និងសង្ខេប</button>
+    </div>
+
+    <div class="result-box" id="resultBox">របាយការណ៍សង្ខេបនឹងបង្ហាញនៅទីនេះ...</div>
+
+    <div class="bottom-actions" id="bottomActions">
+      <button class="btn" id="copyBtn" onclick="copyText()">📋 ចម្លងអត្ថបទ</button>
+      <button class="btn" id="shareBtn" onclick="shareText()">📤 ចែករំលែក (Share)</button>
+    </div>
+  </div>
+
+  <script>
+    let mediaRecorder;
+    let audioChunks = [];
+    let timerInterval;
+    let seconds = 0;
+    let isPaused = false;
+    let wakeLock = null;
+
+    // ពិនិត្យ API Key ពេលបើក App
+    window.onload = () => {
+      const savedKey = localStorage.getItem('gemini_meeting_key');
+      if (!savedKey) {
+        document.getElementById('apiBox').style.display = 'block';
+      } else {
+        document.getElementById('apiKeyInput').value = savedKey;
+      }
+    };
+
+    function toggleApiBox() {
+      const box = document.getElementById('apiBox');
+      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById('apiKeyInput').value.trim();
+      if (!key) return alert('សូមបញ្ចូល API Key!');
+      localStorage.setItem('gemini_meeting_key', key);
+      document.getElementById('apiBox').style.display = 'none';
+      alert('បានរក្សាទុក API Key លើទូរស័ព្ទរួចរាល់!');
+    }
+
+    function formatTime(sec) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
+    }
+
+    // ការពារកុំឲ្យអេក្រង់ទូរស័ព្ទរលត់ពេលកំពុងថតប្រជុំ
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {}
+    }
+
+    async function startRecording() {
+      const apiKey = localStorage.getItem('gemini_meeting_key');
+      if (!apiKey) {
+        document.getElementById('apiBox').style.display = 'block';
+        return alert('សូមបញ្ចូល Gemini API Key ជាមុនសិន!');
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        await requestWakeLock();
+
+        // ជ្រើសរើសប្រភេទសំឡេងដែលទូរស័ព្ទគាំទ្រ (Android = webm, iPhone = mp4)
+        let mimeType = 'audio/webm';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = 'audio/mp4';
+        }
+
+        mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType, audioBitsPerSecond: 32000 });
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = e => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => processAudioWithGemini(mimeType);
+
+        mediaRecorder.start(1000);
+        isPaused = false;
+        seconds = 0;
+        document.getElementById('timer').innerText = '00:00';
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('pauseBtn').style.display = 'block';
+        document.getElementById('pauseBtn').innerText = '⏸️ ផ្អាក';
+        document.getElementById('stopBtn').disabled = false;
+        document.getElementById('bottomActions').style.display = 'none';
+        document.getElementById('resultBox').innerText = 'កំពុងស្ដាប់ការប្រជុំ... (សូមកុំបិទផ្ទាំងកម្មវិធីនេះ)';
+        document.getElementById('statusText').innerHTML = '<span class="recording-dot"></span>កំពុងស្ដាប់ និងកត់ត្រា...';
+
+        timerInterval = setInterval(() => {
+          if (!isPaused) {
+            seconds++;
+            document.getElementById('timer').innerText = formatTime(seconds);
+          }
+        }, 1000);
+
+      } catch (err) {
+        alert('មិនអាចបើកមីក្រូហ្វូនបានទេ៖ ' + err.message);
+      }
+    }
+
+    function togglePause() {
+      if (!mediaRecorder) return;
+      if (!isPaused) {
+        mediaRecorder.pause();
+        isPaused = true;
+        document.getElementById('pauseBtn').innerText = '▶️ បន្តស្ដាប់';
+        document.getElementById('statusText').innerText = '⏸️ បានផ្អាកបណ្ដោះអាសន្ន';
+      } else {
+        mediaRecorder.resume();
+        isPaused = false;
+        document.getElementById('pauseBtn').innerText = '⏸️ ផ្អាក';
+        document.getElementById('statusText').innerHTML = '<span class="recording-dot"></span>កំពុងស្ដាប់ និងកត់ត្រា...';
+      }
+    }
+
+    function stopRecording() {
+      clearInterval(timerInterval);
+      if (wakeLock) { wakeLock.release(); wakeLock = null; }
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+
+      document.getElementById('startBtn').style.display = 'block';
+      document.getElementById('pauseBtn').style.display = 'none';
+      document.getElementById('stopBtn').disabled = true;
+      document.getElementById('statusText').innerText = '⏳ កំពុងបញ្ជូនសំឡេងទៅ AI សង្ខេបខ្លឹមសារ...';
+    }
+
+    async function processAudioWithGemini(mimeType) {
+      const apiKey = localStorage.getItem('gemini_meeting_key');
+      const audioBlob = new Blob(audioChunks, { type: mimeType });
+
+      try {
+        // ១. បង្ហោះសំឡេងទៅ Gemini File API (គាំទ្រប្រជុំវែងៗ ២-៣ ម៉ោង)
+        const uploadRes = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`, {
+          method: 'POST',
+          headers: {
+            'X-Goog-Upload-Protocol': 'raw',
+            'X-Goog-Upload-Command': 'start, upload, finalize',
+            'X-Goog-Upload-Header-Content-Length': audioBlob.size,
+            'X-Goog-Upload-Header-Content-Type': mimeType,
+            'Content-Type': mimeType
+          },
+          body: audioBlob
+        });
+
+        const uploadData = await uploadRes.json();
+        if (uploadData.error) throw new Error(uploadData.error.message);
+        const fileUri = uploadData.file.uri;
+
+        // ២. ឲ្យ Gemini 2.5 Flash ស្ដាប់ និងសង្ខេបខ្លឹមសារ
+        const promptText = `អ្នកគឺជាជំនួយការកត់ត្រាកិច្ចប្រជុំដ៏ជំនាញ។ សូមស្ដាប់សំឡេងកិច្ចប្រជុំនេះដោយយកចិត្តទុកដាក់ រួចសរសេរចេញជារបាយការណ៍សង្ខេបជាភាសាខ្មែរផ្លូវការ និងងាយស្រួលអាន តាមទម្រង់ខាងក្រោម៖
+
+១. ប្រធានបទ ឬខ្លឹមសាររួមនៃកិច្ចប្រជុំ
+២. ចំណុចពិភាក្សាសំខាន់ៗ (សរសេរជាចំណុចៗសង្ខេបខ្លីខ្លឹម)
+៣. សេចក្ដីសម្រេចរបស់អង្គប្រជុំ
+៤. ភារកិច្ចត្រូវអនុវត្តបន្ត (អ្នកទទួលខុសត្រូវ និងកាលបរិច្ឆេទ បើមាន)
+
+កំណត់សម្គាល់៖ សូមសរសេរតែខ្លឹមសារដែលមានក្នុងសំឡេងពិតប្រាកដ កុំបន្ថែមអ្វីដែលគ្មានក្នុងការនិយាយ។`;
+
+        const genRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: promptText },
+                { file_data: { mime_type: mimeType, file_uri: fileUri } }
+              ]
+            }],
+            generationConfig: { temperature: 0.2 }
+          })
+        });
+
+        const genData = await genRes.json();
+        if (genData.error) throw new Error(genData.error.message);
+
+        const summary = genData.candidates[0].content.parts[0].text;
+        document.getElementById('statusText').innerText = '✅ សង្ខេបខ្លឹមសាររួចរាល់!';
+        document.getElementById('resultBox').innerText = summary;
+        document.getElementById('bottomActions').style.display = 'flex';
+
+      } catch (err) {
+        document.getElementById('statusText').innerText = '❌ មានបញ្ហា៖ ' + err.message;
+      }
+    }
+
+    function copyText() {
+      navigator.clipboard.writeText(document.getElementById('resultBox').innerText);
+      alert('បានចម្លងរបាយការណ៍រួចរាល់!');
+    }
+
+    function shareText() {
+      const text = document.getElementById('resultBox').innerText;
+      if (navigator.share) {
+        navigator.share({ title: 'កំណត់ហេតុកិច្ចប្រជុំ', text: text });
+      } else {
+        copyText();
+      }
+    }
+  </script>
+</body>
+</html>
